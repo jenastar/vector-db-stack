@@ -44,3 +44,7 @@ htmlcov/
 *.temp
 tmp/
 temp/
+
+# Claude files
+CLAUDE.md
+.claude/

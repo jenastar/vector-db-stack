@@ -10,8 +10,6 @@ services:
       - PERSIST_DIRECTORY=/chroma/data
     volumes:
       - chromadb_data:/chroma/data
-    networks:
-      - vector-db-network
     restart: unless-stopped
     labels:
       - "project=vector-db"
@@ -26,8 +24,6 @@ services:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
-    networks:
-      - vector-db-network
     restart: unless-stopped
     labels:
       - "project=vector-db"
@@ -46,8 +42,6 @@ services:
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
     volumes:
       - weaviate_data:/var/lib/weaviate
-    networks:
-      - vector-db-network
     restart: unless-stopped
     labels:
       - "project=vector-db"
@@ -58,7 +52,3 @@ volumes:
   chromadb_data:
   qdrant_data:
   weaviate_data:
-
-networks:
-  vector-db-network:
-    driver: bridge
