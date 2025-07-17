@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vdb-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - vector-monitor
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vdb-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - vector-monitor
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  vector-db-exporter:
+    build: ./exporters/vector-db
+    container_name: vdb-exporter
+    env_file:
+      - ./config/vector-db-config.env
+    ports:
+      - "9402:9402"
+    networks:
+      - vector-monitor
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      project: "vector-db-monitor"
+      component: "exporter"
+
+  # ChromaDB service
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: vdb-chromadb
+    ports:
+      - "8000:8000"
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - PERSIST_DIRECTORY=/chroma/data
+    volumes:
+      - chromadb_data:/chroma/data
+    networks:
+      - vector-monitor
+    restart: unless-stopped
+    labels:
+      project: "vector-db-monitor"
+      component: "database"
+      db_type: "chromadb"
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  chromadb_data:
+
+networks:
+  vector-monitor:
+    driver: bridge
